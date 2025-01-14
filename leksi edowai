@@ -1,0 +1,63 @@
+CREATE DATABASE IF NOT EXISTS CMS;
+
+USE CMS;
+
+CREATE TABLE customers (
+    customer_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    phone VARCHAR(15),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE transactions (
+    transaction_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT,
+    transaction_date DATE NOT NULL,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
+);
+CREATE DATABASE IF NOT EXISTS WMS;
+
+USE WMS;
+
+CREATE TABLE spare_parts (
+    part_id INT AUTO_INCREMENT PRIMARY KEY,
+    part_name VARCHAR(100) NOT NULL,
+    stock_quantity INT NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE service_records (
+    service_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT,
+    part_id INT,
+    service_date DATE NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    FOREIGN KEY (customer_id) REFERENCES CMS.customers(customer_id) ON DELETE CASCADE,
+    FOREIGN KEY (part_id) REFERENCES spare_parts(part_id) ON DELETE CASCADE
+);
+CREATE VIEW customer_service_report AS
+SELECT 
+    c.customer_id,
+    c.name AS customer_name,
+    c.email,
+    sr.service_id,
+    sr.service_date,
+    sr.status,
+    sp.part_name,
+    sp.price
+FROM 
+    WMS.service_records sr
+JOIN 
+    CMS.customers c ON sr.customer_id = c.customer_id
+JOIN 
+    WMS.spare_parts sp ON sr.part_id = sp.part_id;
+INSERT INTO CMS.customers (name, email, phone) 
+VALUES ('John Doe', 'johndoe@example.com', '081234567890');
+INSERT INTO WMS.spare_parts (part_name, stock_quantity, price) 
+VALUES ('Brake Pad', 50, 150000.00);
+INSERT INTO WMS.service_records (customer_id, part_id, service_date, status) 
+VALUES (1, 1, '2025-01-14', 'Completed');
+SELECT * FROM customer_service_report;
